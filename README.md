@@ -14,16 +14,19 @@ app/
 │   │   ├── endpoints/      # 具體的業務路由 (如 health.py)
 │   │   └── router.py       # 彙整所有路由
 │   └── dependencies.py     # 全域依賴注入 (Auth, Get DB)
-├── core/                   # 核心配置
-│   ├── config.py           # .env 讀取與設定 (Pydantic Settings)
-│   ├── database.py         # SQLAlchemy Engine 與 Async Session 管理
+├── core/                   # 核心配置 (Pydantic Settings & Redis)
+│   ├── config.py           # .env 讀取與設定
+│   ├── security.py         # JWT 與加密
 │   └── redis.py            # Redis Client 初始化與連線
+├── db/                     # 資料庫核心
+│   ├── base.py             # 基礎類別 (Base)，解決循環引用
+│   ├── session.py          # 非同步連線 (Engine, SessionLocal, get_db)
+│   └── __init__.py         # 暴露常用組件
 ├── models/                 # 資料庫模型 (SQLAlchemy 2.0 Async 模型)
 ├── schemas/                # 資料驗證模型 (Pydantic V2)
-├── services/               # 業務邏輯層 (橫跨多個 Repo 的複雜邏輯)
+├── services/               # 業務邏輯層 (複雜業務邏輯)
 ├── repositories/           # 資料訪問層 (封裝所有 SQL/Redis 查詢)
-└── db/                     # [調整] 基礎資料庫操作 (Session, Base)
-alembic/                    # [新增] 獨立遷移資料夾
+alembic/                    # 獨立遷移資料夾
 ├── versions/               # 遷移版本腳本
 └── env.py                  # Alembic 環境配置
 alembic.ini                 # Alembic 設定檔
