@@ -22,6 +22,29 @@ class Settings(BaseSettings):
     # 必須顯式設定環境變數 INIT_DB=True 才會執行初始化腳本
     INIT_DB: bool = False
 
+    # OnlinePay Settings
+    CHARGE_APP_STATUS_URL: str = ""
+    ONLINE_PAY_MERCHANT_KEY: str = ""
+    ONLINE_PAY_CORPORATE_ID: str = ""
+    ONLINE_PAY_AUTH_PAY: str = ""
+    ONLINE_PAY_ENTRY_MODE: str = ""
+    ONLINE_PAY_CORP_ID: str = ""
+    GET_CTBC_OPW_PAYMENT_API_URL: str = ""
+
+    # ICP Settings
+    ICP_ENC_KEY_ID: str = ""
+    ICP_TIMEOUT: int = 30
+    ICP_API_BASE_URL: str = ""
+    ICP_PLATFORM_ID: str = ""
+    ICP_MERCHANT_ID: str = ""
+    
+    # ICP Crypto Settings
+    ICP_CLIENT_PRIVATE_KEY_PATH: str = "storage/keys/icp_client_private.key"
+    ICP_SERVER_PUBLIC_KEY_PATH: str = "storage/keys/icp_server_public.pem"
+    ICP_AES_KEY: str = ""
+    ICP_AES_IV: str = ""
+    ICP_AES_MODE: str = "AES-128-CBC"
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 settings = Settings()
