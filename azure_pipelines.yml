@@ -1,0 +1,33 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+strategy:
+  matrix:
+    Python310:
+      python.version: '3.10'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: |
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- script: |
+    ruff check .
+  displayName: 'Run Linting (Ruff)'
+
+- script: |
+    mypy .
+  displayName: 'Run Type Checks (Mypy)'
+
+- script: |
+    pytest
+  displayName: 'Run Tests (Pytest)'
