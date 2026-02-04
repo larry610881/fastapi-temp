@@ -1,29 +1,30 @@
 """
 訂單狀態反查命令
 
-CLI 入口點，用於手動執行訂單狀態反查
+CLI 入口點，使用 DI Container 注入 Service
 """
 import typer
 import logging
 import json
 import asyncio
 from typing import Optional
+from dependency_injector.wiring import inject, Provide
 
-from app.db.session import SessionLocal
-from app.services.encryption_service import EncryptionService
+from app.core.container import Container
 from app.services.icp_service import IcpService
 from app.services.charge_status_service import ChargeStatusService
-from app.repositories.order_repository import OrderRepository
-from app.repositories.order_status_repository import OrderStatusRepository
 
 app = typer.Typer()
 logger = logging.getLogger(__name__)
 
 
 @app.command()
+@inject
 def charge_status(
     order_id: str = typer.Argument(..., help="訂單編號"),
-    pay_type: Optional[str] = typer.Argument(None, help="付款方式 (ICP / CTBC)")
+    pay_type: Optional[str] = typer.Argument(None, help="付款方式 (ICP / CTBC)"),
+    charge_status_service: ChargeStatusService = Provide[Container.charge_status_service],
+    icp_service: IcpService = Provide[Container.icp_service],
 ):
     """
     訂單手動反查
@@ -36,42 +37,23 @@ def charge_status(
     typer.echo(f"訂單反查 {order_id}")
 
     async def run_async_logic():
-        result = None
-        
         if pay_type == 'ICP':
-            # ICP 查詢不需要資料庫
-            encryption_service = EncryptionService()
-            icp_service = IcpService(encryption_service)
             response = await icp_service.get_trade_status(order_id)
-            
             if response.success:
                 output_data = response.data if response.data else response.raw_response
-                result = json.dumps(output_data, ensure_ascii=False)
+                return json.dumps(output_data, ensure_ascii=False)
             else:
-                result = f"Failed: {response.error}"
-                
+                return f"Failed: {response.error}"
         else:
-            # OP / CTBC 查詢需要資料庫
-            async with SessionLocal() as session:
-                order_repo = OrderRepository(session)
-                order_status_repo = OrderStatusRepository(session)
-                
-                charge_status_service = ChargeStatusService(
-                    order_repo=order_repo,
-                    order_status_repo=order_status_repo
-                )
-                
-                if pay_type == 'CTBC':
-                    response = await charge_status_service.process_ctbc(order_id)
-                else:
-                    response = await charge_status_service.process(order_id)
-                
-                if response.success:
-                    result = response.raw_response
-                else:
-                    result = f"Failed: {response.error}"
-                    
-        return result
+            if pay_type == 'CTBC':
+                response = await charge_status_service.process_ctbc(order_id)
+            else:
+                response = await charge_status_service.process(order_id)
+            
+            if response.success:
+                return response.raw_response
+            else:
+                return f"Failed: {response.error}"
 
     try:
         final_result = asyncio.run(run_async_logic())
@@ -83,7 +65,7 @@ def charge_status(
             'order_id': order_id,
             'error': str(e)
         })
-        typer.secho("訂單反查發生錯誤", fg=typer.colors.RED)
+        typer.secho(f"訂單反查發生錯誤: {e}", fg=typer.colors.RED)
 
 
 if __name__ == "__main__":

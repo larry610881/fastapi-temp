@@ -11,8 +11,9 @@ redis
 httpx
 tenacity
 typer
+dependency-injector
 
 # Testing
 pytest
 pytest-asyncio
-behave
+pytest-bdd

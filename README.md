@@ -1,98 +1,82 @@
 # PayChecked Admin (Python Migration)
 
-本專案為 PayChecked 後台管理系統的 Python 重構版本，採用 **FastAPI** 與 **Clean Architecture** 實作，並逐步遷移原 Laravel 系統之核心商業邏輯。
+本專案為 PayChecked 後台管理系統的 Python 重構版本，採用 **FastAPI** + **Clean Architecture** 實作。
 
 ## 核心架構
 
-本專案採用分層架構，確保邏輯清晰、易於測試且具備高度擴展性：
-
 ```text
 app/
-├── main.py                 # 應用程式進入點 (FastAPI)
-├── main_cli.py             # 命令行工具進入點 (Typer)
-├── api/                    # 路由層 (Request/Response)
-├── core/                   # 核心配置 (Config, Security, Redis)
-├── db/                     # 資料庫核心 (Session, Base)
-├── models/                 # 資料庫模型 (SQLAlchemy 2.0 Async)
-├── schemas/                # 資料驗證模型 (Pydantic V2)
-├── services/               # 業務邏輯層 (Service Pattern)
-├── repositories/           # 資料存取層 (Repository Pattern)
-└── commands/               # 命令行指令 (Console Commands)
+├── main.py                 # FastAPI 入口 + 全域錯誤處理
+├── main_cli.py             # Typer CLI + 全域錯誤處理
+├── core/
+│   ├── config.py           # 環境設定 + 驗證
+│   └── container.py        # 依賴注入容器 (DI Container)
+├── db/
+│   └── session.py          # Async DB Session + 連線池
+├── models/                 # SQLAlchemy 2.0 Async Models
+├── schemas/                # Pydantic V2 Schemas
+├── services/               # 業務邏輯層 (DI 注入)
+├── repositories/           # 資料存取層
+└── commands/               # CLI 指令 (@inject 注入)
 ```
+
+## 近期重構 (2026-02-04)
+
+### 架構改善
+- ✅ **DI Container**: 使用 `dependency-injector` 統一管理依賴
+- ✅ **全域錯誤處理**: API (`exception_handler`) / CLI (`cli_exception_handler`)
+- ✅ **DB 連線池**: 配置 `pool_size`, `max_overflow`, `pool_recycle`
+- ✅ **Repository 拆分**: `OrderRepository` / `OrderStatusRepository`
+- ✅ **重試機制**: `tenacity` 處理 HTTP 逾時與連線錯誤
+- ✅ **CORS 環境感知**: 根據 `ENVIRONMENT` 動態設定 Origins
+
+### 測試框架
+- ✅ **pytest-bdd**: 取代 behave，整合 pytest 生態系
+- ✅ **單元測試**: 9/9 通過
+
+---
 
 ## 快速啟動
 
-### 方式一：Docker 一鍵啟動 (推薦)
-
-自動啟動 **API + MySQL 8.0 + Redis**：
-
-1.  啟動服務：
-    ```bash
-    docker-compose up --build -d
-    ```
-2.  驗證狀態：
-    - API Health: [http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health)
-    - Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-
-### 方式二：本地開發
-
-1.  安裝依賴：
-    ```bash
-    pip install -r requirements.txt
-    ```
-2.  啟動開發伺服器：
-    ```bash
-    uvicorn app.main:app --reload
-    ```
-
-## 開發指南
-
-### 資料庫遷移 (Alembic)
-
-本專案使用 Alembic 進行資料庫版本控制。當修改 `app/models` 下的模型定義後：
-
-1.  **產生遷移檔**：
-    ```bash
-    alembic revision --autogenerate -m "描述變更內容"
-    ```
-2.  **套用遷移**：
-    ```bash
-    alembic upgrade head
-    ```
-
-### 命令行工具 (CLI)
-
-專案整合 **Typer** 用於執行各類後台任務與排程指令：
-
+### Docker (推薦)
 ```bash
-# 語法
-python -m app.main_cli <指令名稱> [選項]
+docker-compose up --build -d
+```
+- API: http://127.0.0.1:8000/docs
 
-# 範例：執行訂單狀態更新
-python -m app.main_cli charge-status
+### 本地開發
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-### 測試規範 (TDD & BDD)
+---
 
-遵循 **TDD** 與 **BDD** 開發流程，並依專案規範使用 **繁體中文** 撰寫測試描述 (.feature 檔與 Docstrings)。
+## CLI 指令
 
-- **單元測試 (Unit Tests)**:
-  ```bash
-  pytest
-  ```
-- **行為測試 (BDD)**:
-  ```bash
-  behave
-  ```
+```bash
+# 訂單狀態反查
+python -m app.main_cli charge-status <訂單編號> [ICP|CTBC]
+```
 
-## 遷移進度 (Migration Progress)
+---
 
-目前正逐步將 PHP/Laravel 邏輯遷移至 Python 環境：
+## 測試
 
-- [x] **核心架構**: FastAPI + SQLAlchemy Async + Docker 環境搭建
-- [x] **資料庫模型**: 完成 Order, User, Bank, Gps 及主要金流對帳表 (BMS, Cathay, ICP, PayUni 等) 之模型定義
-- [x] **自動化遷移**: 整合 Alembic 並接管現有資料庫結構
-- [/] **Console Commands**:
-    - [x] `charge-status`: 訂單狀態更新
-    - [ ] `check-order-diff`: 訂單差異比對 (規劃中)
-    - [ ] 產品與結算相關指令 (遷移中)
+```bash
+# 單元測試
+$env:PYTHONPATH = "."; pytest tests/unit/ -v
+
+# BDD 測試 (開發中)
+$env:PYTHONPATH = "."; pytest tests/step_defs/ -v
+```
+
+---
+
+## 遷移進度
+
+- [x] FastAPI + SQLAlchemy Async + Docker
+- [x] DI Container + 全域錯誤處理
+- [x] `charge-status` 指令
+- [ ] `check-order-diff` 指令
+- [ ] 安全性掃描整合 (Semgrep)
