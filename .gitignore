@@ -55,4 +55,6 @@ brain/
 Thumbs.db
 
 # Github
-.github/
+
+# Reports
+semgrep_report.json

@@ -53,13 +53,7 @@ class EncryptionService:
             data: 要加密的資料
             
         Returns:
-            加密後的資料 (Base64 encoded string usually, but strictly PHP openssl_encrypt returns raw data by default unless base64 flag is set. 
-            The legacy code's encryption service appears to handle raw bytes return from openssl_encrypt but the caller does base64_encode. 
-            Here we will return raw bytes to match PHP's default behavior, or handle consistent with caller expectations.)
-            
-            Wait, let's look at legacy code:
-            $encrypted = openssl_encrypt($data, $encMode, $key, OPENSSL_RAW_DATA, $iv);
-            So it returns raw bytes.
+            加密後的資料 (Raw bytes)
         """
         try:
             key = settings.ICP_AES_KEY.encode('utf-8')
@@ -74,6 +68,8 @@ class EncryptionService:
             padding_len = bs - (len(raw_data) % bs)
             padded_data = raw_data + bytes([padding_len] * padding_len)
 
+            # Justification: Required for legacy system (ICP) compatibility
+            # nosemgrep: python.cryptography.security.mode-without-authentication.crypto-mode-without-authentication
             cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
             encryptor = cipher.encryptor()
             encrypted = encryptor.update(padded_data) + encryptor.finalize()
@@ -90,13 +86,13 @@ class EncryptionService:
             key = settings.ICP_AES_KEY.encode('utf-8')
             iv = settings.ICP_AES_IV.encode('utf-8')
             
+            # Justification: Required for legacy system (ICP) compatibility
+            # nosemgrep: python.cryptography.security.mode-without-authentication.crypto-mode-without-authentication
             cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
             decryptor = cipher.decryptor()
             
-            # If data is str (and maybe pseudo-bytes), ensure bytes. 
-            # In flow, we base64 decode first before calling this, so it should be bytes.
+            # If data is str, ensure bytes.
             if isinstance(data, str):
-                # Should not really happen if called correctly from service
                 data = data.encode('latin-1') 
 
             decrypted_padded = decryptor.update(data) + decryptor.finalize()
@@ -105,7 +101,7 @@ class EncryptionService:
             padding_len = decrypted_padded[-1]
             if padding_len < 1 or padding_len > 16:
                  # Padding error or no padding
-                 # For simplicity just try to return, but correct unpad is safer
+                 # Return as is or handle error, strictly legacy might fail silently or return garbage
                  pass
                  
             decrypted = decrypted_padded[:-padding_len]

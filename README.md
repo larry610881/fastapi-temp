@@ -79,4 +79,4 @@ $env:PYTHONPATH = "."; pytest tests/step_defs/ -v
 - [x] DI Container + 全域錯誤處理
 - [x] `charge-status` 指令
 - [ ] `check-order-diff` 指令
-- [ ] 安全性掃描整合 (Semgrep)
+- [x] 安全性掃描整合 (Semgrep)
