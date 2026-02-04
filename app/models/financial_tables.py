@@ -356,3 +356,105 @@ class PayUniDiffDetailFile(Base):
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+# === CTBC ===
+class CTBCSettleConsolidateFile(Base):
+    __tablename__ = "c_t_b_c_settle_consolidate_files"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    header: Mapped[str] = mapped_column(String(1), comment="檔頭標籤")
+    time: Mapped[str] = mapped_column(String(14), comment="檔案時間")
+    countSum: Mapped[int] = mapped_column(Integer, default=0, comment="總筆數")
+    moneySum: Mapped[int] = mapped_column(Integer, default=0, comment="總金額")
+    realAmount: Mapped[int] = mapped_column(Integer, comment="撥款金額")
+    start_date: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True, comment="撥款區間-起")
+    end_date: Mapped[Optional[datetime]] = mapped_column(Date, nullable=True, comment="撥款區間-訖")
+    bank_code: Mapped[str] = mapped_column(String(3), comment="銀行代碼")
+    originalContent: Mapped[str] = mapped_column(Text, comment="彙整檔的原始內容")
+
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+class CTBCSettleDetailFile(Base):
+    __tablename__ = "c_t_b_c_settle_detail_files"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    header: Mapped[str] = mapped_column(String(1))
+    time: Mapped[str] = mapped_column(String(14))
+    status: Mapped[str] = mapped_column(String(1))
+    type: Mapped[str] = mapped_column(String(6))
+    bank_code: Mapped[Optional[str]] = mapped_column(String(3), nullable=True)
+    order_id: Mapped[str] = mapped_column(String(28))
+    o2oId: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    payment_institution_transaction_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    transaction_time: Mapped[Optional[str]] = mapped_column(String(14), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3))
+    transaction_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    discount_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    discount_point: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    coupon_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    terminal_code: Mapped[str] = mapped_column(String(3))
+    transaction_results_information: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    general_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    collection_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    proxy_sales_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    store_id: Mapped[str] = mapped_column(String(6))
+    pos_id: Mapped[str] = mapped_column(String(2))
+    cash_register_transaction_serial_number: Mapped[str] = mapped_column(String(6))
+    bank_side_comparison_results: Mapped[str] = mapped_column(String(1))
+    bank_side_comparison_result_code: Mapped[str] = mapped_column(String(5))
+    bank_side_comparison_result_description: Mapped[str] = mapped_column(Text)
+    bonus_activity_code: Mapped[Optional[str]] = mapped_column(String(3), nullable=True)
+
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+class CTBCDiffConsolidateFile(Base):
+    __tablename__ = "c_t_b_c_diff_consolidate_files"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    header: Mapped[str] = mapped_column(String(1), comment="檔頭標籤")
+    time: Mapped[str] = mapped_column(String(14), comment="檔案時間")
+    countSum: Mapped[int] = mapped_column(Integer, default=0, comment="總筆數")
+    moneySum: Mapped[int] = mapped_column(Integer, default=0, comment="總金額")
+    bank_code: Mapped[str] = mapped_column(String(3), comment="銀行代碼")
+    originalContent: Mapped[str] = mapped_column(Text)
+
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+class CTBCDiffDetailFile(Base):
+    __tablename__ = "c_t_b_c_diff_detail_files"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    header: Mapped[str] = mapped_column(String(1))
+    diff_type: Mapped[str] = mapped_column(String(1))
+    status: Mapped[str] = mapped_column(String(1))
+    type: Mapped[str] = mapped_column(String(6))
+    bank_code: Mapped[Optional[str]] = mapped_column(String(3), nullable=True)
+    order_id: Mapped[str] = mapped_column(String(28), comment="特店交易編號")
+    o2oId: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    payment_institution_transaction_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    transaction_time: Mapped[Optional[str]] = mapped_column(String(14), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3))
+    transaction_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    discount_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    discount_point: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    coupon_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    terminal_code: Mapped[str] = mapped_column(String(3))
+    consumer_authentication_code: Mapped[Optional[str]] = mapped_column(String(25), nullable=True)
+    general_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    collection_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    proxy_sales_amount: Mapped[int] = mapped_column(Integer) # unsignedInteger
+    store_id: Mapped[str] = mapped_column(String(6))
+    pos_id: Mapped[str] = mapped_column(String(2))
+    cash_register_transaction_serial_number: Mapped[str] = mapped_column(String(6))
+    bonus_activity_code: Mapped[Optional[str]] = mapped_column(String(3), nullable=True)
+    merchant_id: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
+
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

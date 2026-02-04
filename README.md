@@ -65,4 +65,17 @@ alembic.ini                 # Alembic 設定檔
 - **健康檢查**: `/api/v1/health` (已內建 MySQL 與 Redis 連線測試)
 - **測試**: 執行 `pytest` 進行基礎功能驗證。
 
+---
 
+## PHP to Python 遷移進度 (Migration Progress)
+
+目前已完成從 PHP/Laravel 至 FastAPI 的核心架構遷移，主要包含：
+
+-   **資料庫模型 (Models)**: 已遷移 Order, User, Bank, Gps 及大量對帳用金流財會資料表（BMS, Cathay, ICP, PayUni 等）。
+-   **架構特點**:
+    -   實作 **Soft Delete**Mixins 與事件監聽。
+    -   **SQLAlchemy 2.0 Async** 非同步資料庫連線。
+    -   **Alembic** 遷移系統對接現有資料庫架構。
+-   **開發環境**: 整合 Docker Compose 固定網路名稱 (`payngo-admin-python_default`) 與統一的環境變數管理。
+
+更多細節請見 [walkthrough](file:///C:/Users/P10359945/.gemini/antigravity/brain/4c309daa-9a3c-4615-822e-c2afef4f27b7/walkthrough.md) (僅限本地參考)。

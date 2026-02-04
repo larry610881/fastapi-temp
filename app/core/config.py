@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Environment Settings
+    # 環境設定: local, staging, production
+    ENVIRONMENT: str = "local"
+    
+    # Initialization Toggle
+    # 是否允許資料庫初始化 (為了安全，預設為 False)
+    # 必須顯式設定環境變數 INIT_DB=True 才會執行初始化腳本
+    INIT_DB: bool = False
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 settings = Settings()

@@ -20,6 +20,7 @@ class OrderDetail(Base):
     discount: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, comment="折扣率或金額")
     discount_fra_type: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, comment="小數點處理方式(0 => 無條件進位　1 => 四捨五入　2 => 無條件捨去)")
     no_discount_type: Mapped[int] = mapped_column(Integer, default=0, comment="No Discount Type")
+    cherish_flg: Mapped[int] = mapped_column(TINYINT, default=0, comment="珍食標記 (0: 否, 1: 是)")
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=True)

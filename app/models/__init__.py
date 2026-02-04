@@ -12,9 +12,12 @@ from app.models.page_manager import PageManager
 from app.models.websockets_statistics_entry import WebsocketsStatisticsEntry
 from app.models.sc_host import SendToSCHostData, SendToSCHostDailyData
 from app.models.checkout import CheckoutSmsConsolidateFile, CheckoutSmsDetailFile, CheckoutPayuniCredithash
+from app.models.bank import Bank
+from app.models.gps import Gps
 from app.models.financial_tables import (
     BmsConsolidateFile, BmsDetailFile,
     CathaySettleConsolidateFile, CathaySettleDetailFile, CathayDiffConsolidateFile, CathayDiffDetailFile,
     IcpSettleConsolidateFile, IcpSettleDetailFile, IcpDiffConsolidateFile, IcpDiffDetailFile,
-    PayUniSettleConsolidateFile, PayUniSettleDetailFile, PayUniDiffConsolidateFile, PayUniDiffDetailFile
+    PayUniSettleConsolidateFile, PayUniSettleDetailFile, PayUniDiffConsolidateFile, PayUniDiffDetailFile,
+    CTBCSettleConsolidateFile, CTBCSettleDetailFile, CTBCDiffConsolidateFile, CTBCDiffDetailFile
 )

@@ -31,6 +31,7 @@ class Order(Base):
     no_discount_total_price: Mapped[int] = mapped_column(Integer, default=0, comment="No Discount Total Price")
     tx_no_discount_price: Mapped[int] = mapped_column(UnsignedInteger(unsigned=True), default=0, comment="TX No Discount Price")
     ex_no_discount_price: Mapped[int] = mapped_column(UnsignedInteger(unsigned=True), default=0, comment="EX No Discount Price")
+    ifood_discount_price: Mapped[int] = mapped_column(UnsignedInteger(unsigned=True), default=0, comment="iFood 折扣金額")
 
     # API / SDK Fields
     SDK_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
