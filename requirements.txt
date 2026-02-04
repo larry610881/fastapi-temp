@@ -8,7 +8,11 @@ alembic
 python-jose[cryptography]
 passlib[bcrypt]
 redis
+httpx
+tenacity
+typer
+
+# Testing
 pytest
 pytest-asyncio
-httpx
-
+behave

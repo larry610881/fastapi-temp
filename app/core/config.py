@@ -1,11 +1,18 @@
+"""
+應用程式設定
+
+使用 Pydantic Settings 管理環境變數與設定
+"""
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from pydantic import field_validator
+from typing import Optional, List
+
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "FastAPI Hybrid Boilerplate"
+    PROJECT_NAME: str = "PayChecked Admin"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "DEV_SECRET_KEY"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 11520 # 8 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 11520  # 8 days
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
@@ -17,9 +24,10 @@ class Settings(BaseSettings):
     # 環境設定: local, staging, production
     ENVIRONMENT: str = "local"
     
+    # CORS Origins (逗號分隔)
+    CORS_ORIGINS: str = "*"
+    
     # Initialization Toggle
-    # 是否允許資料庫初始化 (為了安全，預設為 False)
-    # 必須顯式設定環境變數 INIT_DB=True 才會執行初始化腳本
     INIT_DB: bool = False
 
     # OnlinePay Settings
@@ -46,5 +54,33 @@ class Settings(BaseSettings):
     ICP_AES_MODE: str = "AES-128-CBC"
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
+    @field_validator('ENVIRONMENT')
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        allowed = ['local', 'staging', 'production']
+        if v not in allowed:
+            raise ValueError(f'ENVIRONMENT must be one of {allowed}')
+        return v
+
+    @field_validator('DATABASE_URL')
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        if not v:
+            raise ValueError('DATABASE_URL is required')
+        return v
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """取得 CORS Origins 列表"""
+        if self.CORS_ORIGINS == "*":
+            return ["*"]
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+    
+    @property
+    def is_production(self) -> bool:
+        """是否為正式環境"""
+        return self.ENVIRONMENT == "production"
+
 
 settings = Settings()

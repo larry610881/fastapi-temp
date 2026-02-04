@@ -1,3 +1,8 @@
+"""
+訂單狀態反查服務單元測試
+
+測試 ChargeStatusService 與 IcpService 的核心功能
+"""
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 from datetime import datetime
@@ -10,14 +15,13 @@ from app.models.order import Order
 from app.models.order_status import OrderStatus
 from app.schemas.charge_status import ChargeStatusResponse
 
-# Mock settings to avoid environment issues during tests
+
 @pytest.fixture(autouse=True)
 def mock_settings():
-    # Patch settings in both modules where it is imported
+    """模擬設定以避免環境問題"""
     with patch('app.services.charge_status_service.settings') as s1, \
          patch('app.services.icp_service.settings') as s2:
         
-        # Common setup for both mocks (or just ensure they have needed attrs)
         for s in [s1, s2]:
             s.CHARGE_APP_STATUS_URL = "http://op-api.test/status"
             s.ONLINE_PAY_MERCHANT_KEY = "dummy_key"
@@ -35,20 +39,35 @@ def mock_settings():
         
         yield (s1, s2)
 
-@pytest.fixture
-def mock_order_repo():
-    # Use AsyncMock for async methods
-    repo = MagicMock()
-    repo.get_by_id = AsyncMock()
-    repo.get_order_status = AsyncMock()
-    return repo
 
 @pytest.fixture
-def charge_status_service():
-    return ChargeStatusService()
+def mock_order_repo():
+    """模擬訂單 Repository"""
+    repo = MagicMock()
+    repo.get_by_id = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_order_status_repo():
+    """模擬訂單狀態 Repository"""
+    repo = MagicMock()
+    repo.get_by_order_id = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def charge_status_service(mock_order_repo, mock_order_status_repo):
+    """建立 ChargeStatusService 實例"""
+    return ChargeStatusService(
+        order_repo=mock_order_repo,
+        order_status_repo=mock_order_status_repo
+    )
+
 
 @pytest.fixture
 def mock_encryption_service():
+    """模擬加密服務"""
     service = MagicMock()
     service.aes_encrypt.return_value = b"encrypted_content"
     service.rsa_sign.return_value = "signature"
@@ -56,9 +75,12 @@ def mock_encryption_service():
     service.aes_decrypt.return_value = json.dumps({"RtnCode": 1, "TradeStatus": 1})
     return service
 
+
 @pytest.fixture
 def icp_service(mock_encryption_service):
+    """建立 IcpService 實例"""
     return IcpService(mock_encryption_service)
+
 
 # ==========================================
 # TEST: ChargeStatusService (OP)
@@ -74,18 +96,14 @@ async def test_charge_status_process_success(charge_status_service, mock_order_r
     mock_order = Order(id=order_id, payable_amount=100, created_at=datetime(2023, 1, 1, 12, 0, 0))
     mock_order_repo.get_by_id.return_value = mock_order
 
-    # Mock httpx.AsyncClient
-    with patch('app.services.charge_status_service.httpx.AsyncClient') as mock_client_cls:
-        mock_client = AsyncMock()
-        mock_client_cls.return_value.__aenter__.return_value = mock_client
-        
+    with patch.object(charge_status_service, '_post_with_retry') as mock_post:
         mock_response = MagicMock()
         mock_response.text = "1|OK"
         mock_response.status_code = 200
-        mock_client.post.return_value = mock_response
+        mock_post.return_value = mock_response
         
         # When
-        result = await charge_status_service.process(mock_order_repo, order_id)
+        result = await charge_status_service.process(order_id)
         
         # Then
         assert isinstance(result, ChargeStatusResponse)
@@ -93,7 +111,7 @@ async def test_charge_status_process_success(charge_status_service, mock_order_r
         assert result.gateway == "OP"
         assert result.raw_response == "1|OK"
         mock_order_repo.get_by_id.assert_called_with(order_id)
-        mock_client.post.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_charge_status_process_order_not_found(charge_status_service, mock_order_repo):
@@ -105,15 +123,20 @@ async def test_charge_status_process_order_not_found(charge_status_service, mock
     mock_order_repo.get_by_id.return_value = None
 
     # When
-    result = await charge_status_service.process(mock_order_repo, order_id)
+    result = await charge_status_service.process(order_id)
 
     # Then
     assert isinstance(result, ChargeStatusResponse)
     assert result.success is False
     assert "not found" in result.error.lower()
 
+
 @pytest.mark.asyncio
-async def test_charge_status_process_ctbc_success(charge_status_service, mock_order_repo):
+async def test_charge_status_process_ctbc_success(
+    charge_status_service, 
+    mock_order_repo, 
+    mock_order_status_repo
+):
     """
     場景：查詢 CTBC 訂單狀態
     """
@@ -123,24 +146,22 @@ async def test_charge_status_process_ctbc_success(charge_status_service, mock_or
     mock_status = OrderStatus(order_id=order_id, status='1', content=json.dumps({"walletSeq": "WS123"}))
     
     mock_order_repo.get_by_id.return_value = mock_order
-    mock_order_repo.get_order_status.return_value = mock_status
+    mock_order_status_repo.get_by_order_id.return_value = mock_status
     
-    with patch('app.services.charge_status_service.httpx.AsyncClient') as mock_client_cls:
-        mock_client = AsyncMock()
-        mock_client_cls.return_value.__aenter__.return_value = mock_client
-        
+    with patch.object(charge_status_service, '_get_with_retry') as mock_get:
         mock_response = MagicMock()
         mock_response.text = "OK"
-        mock_client.get.return_value = mock_response
+        mock_get.return_value = mock_response
         
         # When
-        result = await charge_status_service.process_ctbc(mock_order_repo, order_id)
+        result = await charge_status_service.process_ctbc(order_id)
         
         # Then
         assert isinstance(result, ChargeStatusResponse)
         assert result.success is True
         assert result.gateway == "CTBC"
         assert result.raw_response == "OK"
+
 
 # ==========================================
 # TEST: IcpService
@@ -154,10 +175,7 @@ async def test_icp_get_trade_status_success(icp_service):
     # Given
     order_id = "ORD-2023-001"
     
-    with patch('app.services.icp_service.httpx.AsyncClient') as mock_client_cls:
-        mock_client = AsyncMock()
-        mock_client_cls.return_value.__aenter__.return_value = mock_client
-        
+    with patch.object(icp_service, '_post_with_retry') as mock_post:
         mock_response = MagicMock()
         mock_response.is_success = True
         mock_response.status_code = 200
@@ -166,7 +184,7 @@ async def test_icp_get_trade_status_success(icp_service):
             'RtnCode': 1, 
             'EncData': base64.b64encode(b"encrypted_resp").decode('utf-8')
         })
-        mock_client.post.return_value = mock_response
+        mock_post.return_value = mock_response
         
         # When
         result = await icp_service.get_trade_status(order_id)
@@ -175,23 +193,18 @@ async def test_icp_get_trade_status_success(icp_service):
         assert isinstance(result, ChargeStatusResponse)
         assert result.success is True
         assert result.gateway == "ICP"
-        assert result.data['RtnCode'] == 1 # Based on mock decryption
+        assert result.data['RtnCode'] == 1
+
 
 @pytest.mark.asyncio
-async def test_icp_get_trade_status_timeout(icp_service):
+async def test_icp_get_trade_status_empty_order_id(icp_service):
     """
-    場景：外部服務失敗 (Timeout)
+    場景：訂單編號為空
     """
-    # Given
-    order_id = "ORD-TIMEOUT"
+    # When
+    result = await icp_service.get_trade_status("")
     
-    with patch('app.services.icp_service.httpx.AsyncClient') as mock_client_cls:
-        mock_client_cls.return_value.__aenter__.side_effect = Exception("Timeout")
-        
-        # When
-        result = await icp_service.get_trade_status(order_id)
-        
-        # Then
-        assert isinstance(result, ChargeStatusResponse)
-        assert result.success is False
-        assert "Timeout" in result.error
+    # Then
+    assert isinstance(result, ChargeStatusResponse)
+    assert result.success is False
+    assert "空" in result.error

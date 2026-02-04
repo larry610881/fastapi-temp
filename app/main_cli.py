@@ -7,6 +7,3 @@ app.command(name="charge-status")(charge_status)
 
 if __name__ == "__main__":
     app()
-
-if __name__ == "__main__":
-    app()
